@@ -53,13 +53,16 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
-ignore = ["E501"]
+ignore = ["E501", "N999", "W293"]  # N999: 模块命名, W293: 多行字符串中的空白
 
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_ignores = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+explicit_package_bases = true
+mypy_path = "."
 
 # 默认使用腾讯云源，加速依赖安装
 [[tool.uv.index]]

@@ -2,7 +2,6 @@
 
 import subprocess
 from tkinter import messagebox
-from typing import Optional
 
 
 def run_command(

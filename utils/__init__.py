@@ -1,8 +1,8 @@
 """工具模块"""
 
 from .admin import is_admin, run_as_admin, set_taskbar_icon
-from .system import run_command, open_system_tool
-from .logger import logger, enable_console_log, disable_console_log, is_console_log_enabled
+from .logger import disable_console_log, enable_console_log, is_console_log_enabled, logger
+from .system import open_system_tool, run_command
 
 __all__ = [
     "is_admin", "run_as_admin", "set_taskbar_icon",

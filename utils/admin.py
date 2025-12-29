@@ -16,7 +16,7 @@ def set_taskbar_icon() -> None:
 def is_admin() -> bool:
     """检查是否以管理员权限运行"""
     try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except Exception:
         return False
 
