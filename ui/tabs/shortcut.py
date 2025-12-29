@@ -68,7 +68,8 @@ class ShortcutTab(BaseTab):
                 "category": "第三方工具",
                 "items": [
                     ("🗑️ 软件卸载 (Geek)", "高效卸载软件及残留", self._open_geek_uninstaller),
-                    ("🔬 进程监控 (Sysinternals)", "微软进程监控工具", self._open_sysinternals),
+                    ("🔬 进程监控 (ProcMon)", "实时监控进程活动", self._open_sysinternals),
+                    ("🌐 网络连接 (TCPView)", "查看所有TCP/UDP连接", self._open_tcpview),
                 ]
             }
         ]
@@ -133,7 +134,35 @@ class ShortcutTab(BaseTab):
     
     def _open_sysinternals(self) -> None:
         """打开 Sysinternals Process Monitor"""
-        self._open_third_party_tool("sysinternals")
+        self._open_sysinternals_tool("procmon.exe", "Process Monitor")
+    
+    def _open_tcpview(self) -> None:
+        """打开 TCPView 网络连接监控"""
+        self._open_sysinternals_tool("tcpview.exe", "TCPView")
+    
+    def _open_sysinternals_tool(self, exe_name: str, tool_name: str) -> None:
+        """打开 Sysinternals 工具"""
+        import os
+        import subprocess
+        
+        tool = ToolsService.get_tool("sysinternals")
+        if not tool:
+            return
+        
+        if not tool.is_installed():
+            if messagebox.askyesno("下载确认", f"Sysinternals Suite 尚未安装，是否立即下载？"):
+                self._download_tool("sysinternals")
+            return
+        
+        exe_path = os.path.join(tool.install_dir, exe_name)
+        if not os.path.exists(exe_path):
+            messagebox.showerror("错误", f"工具文件不存在: {exe_name}")
+            return
+        
+        try:
+            subprocess.Popen([exe_path], creationflags=subprocess.CREATE_NO_WINDOW)
+        except Exception as e:
+            messagebox.showerror("错误", f"启动 {tool_name} 失败: {e}")
     
     def _open_third_party_tool(self, tool_id: str) -> None:
         """打开第三方工具"""

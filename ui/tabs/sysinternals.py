@@ -109,6 +109,9 @@ class SysinternalsTab(BaseTab):
             text="💡 双击工具启动，部分工具需要管理员权限",
             foreground="gray"
         ).pack(side=tk.LEFT)
+        
+        # 刷新状态
+        self._refresh_status()
     
     def _create_status_bar(self) -> None:
         """创建状态栏"""
@@ -139,8 +142,6 @@ class SysinternalsTab(BaseTab):
             text="刷新",
             command=self._refresh_status
         ).pack(side=tk.LEFT, padx=2)
-        
-        self._refresh_status()
     
     def _create_tools_list(self) -> None:
         """创建工具列表"""
@@ -180,9 +181,6 @@ class SysinternalsTab(BaseTab):
         
         # 双击启动
         self.tools_tree.bind("<Double-1>", self._on_tool_double_click)
-        
-        # 加载工具列表
-        self._load_tools()
     
     def _refresh_status(self) -> None:
         """刷新状态"""
