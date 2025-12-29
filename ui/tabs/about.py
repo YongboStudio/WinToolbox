@@ -10,42 +10,66 @@ from tkinter import messagebox, ttk
 from .base import BaseTab
 
 
+def get_base_path() -> str:
+    """获取基础路径"""
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS  # type: ignore
+    return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+def get_build_time() -> str:
+    """获取构建时间"""
+    buildtime_file = os.path.join(get_base_path(), 'buildtime.txt')
+    if os.path.exists(buildtime_file):
+        with open(buildtime_file, encoding='utf-8') as f:
+            return f.read().strip()
+    return "开发模式"
+
+
+def get_version() -> str:
+    """从 pyproject.toml 读取版本号"""
+    pyproject_file = os.path.join(get_base_path(), 'pyproject.toml')
+    if os.path.exists(pyproject_file):
+        with open(pyproject_file, encoding='utf-8') as f:
+            import re
+            content = f.read()
+            match = re.search(r'version\s*=\s*"([^"]+)"', content)
+            if match:
+                return match.group(1)
+    return "未知"
+
+
+def get_features_from_readme() -> str:
+    """从 README.md 读取功能特性"""
+    readme_file = os.path.join(get_base_path(), 'README.md')
+    if not os.path.exists(readme_file):
+        return "功能特性信息不可用"
+    
+    with open(readme_file, encoding='utf-8') as f:
+        content = f.read()
+    
+    # 提取 ## 功能特性 到下一个 ## 之间的内容
+    import re
+    match = re.search(r'## 功能特性\s*\n(.*?)(?=\n## |\Z)', content, re.DOTALL)
+    if match:
+        features = match.group(1).strip()
+        # 简化格式：移除 ### 和 emoji
+        features = re.sub(r'### [^\n]*\n', '', features)
+        features = re.sub(r'^- ', '• ', features, flags=re.MULTILINE)
+        return features
+    return "功能特性信息不可用"
+
+
 class AboutTab(BaseTab):
     """关于选项卡"""
 
     # 项目信息
     APP_NAME = "Windows 系统工具箱"
-    APP_VERSION = "1.0.0"
     AUTHOR = "YongboStudio"
     AUTHOR_URL = "https://github.com/YongboStudio"
     PROJECT_URL = "https://github.com/YongboStudio/WinToolbox"
 
-    ABOUT_TEXT = """
-        功能说明:
-        ─────────────────────────────────────
-        
-        1. 快捷入口
-           • 常用系统设置快捷方式
-           • 第三方工具快捷启动
-        
-        2. HOSTS 管理
-           • 查看和编辑 Windows HOSTS 文件
-           • 快速添加 IP-域名 映射
-        
-        3. 路由管理
-           • 查看当前路由表
-           • 添加/删除路由 (支持永久路由)
-        
-        4. IP 地址
-           • 查看所有网络适配器信息
-           • 显示 IPv4、子网掩码、网关、DNS、MAC
-        
-        ─────────────────────────────────────
-        
-        注意事项:
-        • 修改 HOSTS 和路由需要管理员权限
-        • 请右键选择"以管理员身份运行"
-    """
+    ABOUT_TEXT = ""  # 动态从 README 获取
 
     def setup_ui(self) -> None:
         """设置 UI 界面"""
@@ -66,19 +90,30 @@ class AboutTab(BaseTab):
             font=("Microsoft YaHei UI", 16, "bold")
         ).pack()
 
+        version = get_version()
         ttk.Label(
             header_frame,
-            text=f"版本 {self.APP_VERSION}",
+            text=f"版本 {version}",
             foreground="gray"
         ).pack(pady=5)
 
+        # 构建时间
+        build_time = get_build_time()
+        ttk.Label(
+            header_frame,
+            text=f"构建时间: {build_time}",
+            foreground="gray"
+        ).pack()
+
     def _create_about_text(self) -> None:
         """创建关于文本"""
+        features = get_features_from_readme()
+        
         text_widget = tk.Text(
             self.frame, wrap=tk.WORD, font=("Microsoft YaHei UI", 10), height=15
         )
         text_widget.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
-        text_widget.insert(tk.END, self.ABOUT_TEXT)
+        text_widget.insert(tk.END, features)
         text_widget.config(state=tk.DISABLED)
 
     def _create_links(self) -> None:

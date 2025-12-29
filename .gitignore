@@ -12,3 +12,6 @@ wheels/
 # log
 logs/
 tools/
+
+# build temp
+buildtime.txt
