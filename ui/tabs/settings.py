@@ -1,5 +1,6 @@
 """设置选项卡"""
 
+import os
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -27,23 +28,43 @@ class SettingsTab(BaseTab):
         title_label.pack(pady=20)
 
         # 设置容器（可滚动）
-        canvas = tk.Canvas(self.frame)
-        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
-        self.container = ttk.Frame(canvas)
+        self.canvas = tk.Canvas(self.frame)
+        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=self.canvas.yview)
+        self.container = ttk.Frame(self.canvas)
 
         self.container.bind(
             "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         )
 
-        canvas.create_window((0, 0), window=self.container, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas_frame = self.canvas.create_window((0, 0), window=self.container, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
+        # 绑定鼠标滚轮事件
+        def _on_mousewheel(event):
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            self.canvas.unbind_all("<MouseWheel>")
+
+        self.canvas.bind("<Enter>", _bind_mousewheel)
+        self.canvas.bind("<Leave>", _unbind_mousewheel)
+
+        # 让 container 宽度跟随 canvas
+        def _configure_canvas(event):
+            self.canvas.itemconfig(canvas_frame, width=event.width)
+
+        self.canvas.bind("<Configure>", _configure_canvas)
+
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self._create_display_settings()
         self._create_log_settings()
+        self._create_tools_dir_settings()
         self._create_tools_management()
         self._create_buttons()
 
@@ -93,18 +114,103 @@ class SettingsTab(BaseTab):
         frame = ttk.LabelFrame(self.container, text="日志设置")
         frame.pack(fill=tk.X, padx=10, pady=10)
 
-        row = ttk.Frame(frame)
-        row.pack(fill=tk.X, padx=10, pady=10)
+        # 终端日志开关
+        row1 = ttk.Frame(frame)
+        row1.pack(fill=tk.X, padx=10, pady=5)
 
         self.console_log_var = tk.BooleanVar(value=self.settings.console_log)
         ttk.Checkbutton(
-            row,
+            row1,
             text="输出日志到终端",
             variable=self.console_log_var,
             command=self._toggle_console_log
         ).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(row, text="(日志文件保存在 logs/ 目录)", foreground="gray").pack(side=tk.LEFT, padx=5)
+        # 日志目录
+        row2 = ttk.Frame(frame)
+        row2.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(row2, text="日志目录:").pack(side=tk.LEFT, padx=5)
+
+        current_logs_dir = self.settings.get_logs_dir()
+        self.logs_dir_var = tk.StringVar(value=current_logs_dir)
+        logs_dir_entry = ttk.Entry(row2, textvariable=self.logs_dir_var, width=50)
+        logs_dir_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        ttk.Button(row2, text="浏览", command=self._browse_logs_dir).pack(side=tk.LEFT, padx=5)
+        ttk.Button(row2, text="打开", command=self._open_logs_dir).pack(side=tk.LEFT, padx=5)
+
+        # 提示
+        tip_row = ttk.Frame(frame)
+        tip_row.pack(fill=tk.X, padx=10, pady=5)
+        default_logs_dir = AppSettings.get_default_logs_dir()
+        ttk.Label(tip_row, text=f"默认: {default_logs_dir} (重启后生效)", foreground="gray").pack(side=tk.LEFT)
+
+    def _browse_logs_dir(self) -> None:
+        """浏览选择日志目录"""
+        from tkinter import filedialog
+        dir_path = filedialog.askdirectory(
+            title="选择日志保存目录",
+            initialdir=self.logs_dir_var.get()
+        )
+        if dir_path:
+            self.logs_dir_var.set(dir_path)
+
+    def _open_logs_dir(self) -> None:
+        """打开日志目录"""
+        import subprocess
+        dir_path = self.logs_dir_var.get()
+        if os.path.exists(dir_path):
+            subprocess.Popen(["explorer", dir_path])
+        else:
+            if messagebox.askyesno("提示", f"目录不存在，是否创建？\n{dir_path}"):
+                os.makedirs(dir_path, exist_ok=True)
+                subprocess.Popen(["explorer", dir_path])
+
+    def _create_tools_dir_settings(self) -> None:
+        """创建工具目录设置"""
+        frame = ttk.LabelFrame(self.container, text="工具目录设置")
+        frame.pack(fill=tk.X, padx=10, pady=10)
+
+        row = ttk.Frame(frame)
+        row.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(row, text="安装目录:").pack(side=tk.LEFT, padx=5)
+
+        current_dir = self.settings.get_tools_dir()
+        self.tools_dir_var = tk.StringVar(value=current_dir)
+        tools_dir_entry = ttk.Entry(row, textvariable=self.tools_dir_var, width=50)
+        tools_dir_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        ttk.Button(row, text="浏览", command=self._browse_tools_dir).pack(side=tk.LEFT, padx=5)
+        ttk.Button(row, text="打开", command=self._open_tools_dir).pack(side=tk.LEFT, padx=5)
+
+        # 提示
+        tip_row = ttk.Frame(frame)
+        tip_row.pack(fill=tk.X, padx=10, pady=5)
+        default_dir = AppSettings.get_default_tools_dir()
+        ttk.Label(tip_row, text=f"默认: {default_dir}", foreground="gray").pack(side=tk.LEFT)
+
+    def _browse_tools_dir(self) -> None:
+        """浏览选择工具目录"""
+        from tkinter import filedialog
+        dir_path = filedialog.askdirectory(
+            title="选择工具安装目录",
+            initialdir=self.tools_dir_var.get()
+        )
+        if dir_path:
+            self.tools_dir_var.set(dir_path)
+
+    def _open_tools_dir(self) -> None:
+        """打开工具目录"""
+        import subprocess
+        dir_path = self.tools_dir_var.get()
+        if os.path.exists(dir_path):
+            subprocess.Popen(["explorer", dir_path])
+        else:
+            if messagebox.askyesno("提示", f"目录不存在，是否创建？\n{dir_path}"):
+                os.makedirs(dir_path, exist_ok=True)
+                subprocess.Popen(["explorer", dir_path])
 
     def _toggle_console_log(self) -> None:
         """切换终端日志"""
@@ -369,10 +475,25 @@ class SettingsTab(BaseTab):
                 messagebox.showwarning("警告", "请输入有效的窗口尺寸数值")
                 return
 
+            # 处理工具目录
+            tools_dir = self.tools_dir_var.get().strip()
+            default_tools_dir = AppSettings.get_default_tools_dir()
+            # 如果是默认目录，保存为空字符串
+            if tools_dir == default_tools_dir:
+                tools_dir = ""
+
+            # 处理日志目录
+            logs_dir = self.logs_dir_var.get().strip()
+            default_logs_dir = AppSettings.get_default_logs_dir()
+            if logs_dir == default_logs_dir:
+                logs_dir = ""
+
             self.settings.font_size = self.font_size_var.get()
             self.settings.console_log = self.console_log_var.get()
             self.settings.window_width = width
             self.settings.window_height = height
+            self.settings.tools_dir = tools_dir
+            self.settings.logs_dir = logs_dir
             SettingsService.save(self.settings)
             logger.info(f"设置已保存: font_size={self.settings.font_size}, window={width}x{height}")
             messagebox.showinfo("成功", "设置已保存，部分设置重启后生效")
@@ -386,6 +507,8 @@ class SettingsTab(BaseTab):
         self.console_log_var.set(False)
         self.window_width_var.set("900")
         self.window_height_var.set("650")
+        self.tools_dir_var.set(AppSettings.get_default_tools_dir())
+        self.logs_dir_var.set(AppSettings.get_default_logs_dir())
         disable_console_log()
         self.settings = AppSettings()
         SettingsService.save(self.settings)

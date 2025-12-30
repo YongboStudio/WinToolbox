@@ -12,6 +12,8 @@ class AppSettings:
     console_log: bool = False
     window_width: int = 900
     window_height: int = 650
+    tools_dir: str = ""  # 空字符串表示使用默认目录
+    logs_dir: str = ""   # 空字符串表示使用默认目录
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -22,8 +24,28 @@ class AppSettings:
             font_size=data.get("font_size", 10),
             console_log=data.get("console_log", False),
             window_width=data.get("window_width", 900),
-            window_height=data.get("window_height", 650)
+            window_height=data.get("window_height", 650),
+            tools_dir=data.get("tools_dir", ""),
+            logs_dir=data.get("logs_dir", "")
         )
+
+    @staticmethod
+    def get_default_tools_dir() -> str:
+        """获取默认工具目录"""
+        return os.path.join(os.path.expanduser("~"), ".wintoolbox", "tools")
+
+    @staticmethod
+    def get_default_logs_dir() -> str:
+        """获取默认日志目录"""
+        return os.path.join(os.path.expanduser("~"), ".wintoolbox", "logs")
+
+    def get_tools_dir(self) -> str:
+        """获取工具目录（如果未设置则返回默认值）"""
+        return self.tools_dir if self.tools_dir else self.get_default_tools_dir()
+
+    def get_logs_dir(self) -> str:
+        """获取日志目录（如果未设置则返回默认值）"""
+        return self.logs_dir if self.logs_dir else self.get_default_logs_dir()
 
 
 class SettingsService:

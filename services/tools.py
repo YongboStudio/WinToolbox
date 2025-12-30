@@ -8,7 +8,13 @@ import zipfile
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 
+from services.settings import SettingsService
 from utils.logger import logger
+
+
+def get_tools_dir() -> str:
+    """获取工具安装目录"""
+    return SettingsService.get().get_tools_dir()
 
 
 @dataclass
@@ -24,7 +30,7 @@ class ToolInfo:
     @property
     def install_dir(self) -> str:
         """安装目录"""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), "tools", self.folder_name)
+        return os.path.join(get_tools_dir(), self.folder_name)
 
     @property
     def exe_path(self) -> str:

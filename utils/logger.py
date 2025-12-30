@@ -1,12 +1,32 @@
 """日志模块"""
 
+import json
 import os
 import sys
 
 from loguru import logger
 
+
+def _get_logs_dir() -> str:
+    """获取日志目录（避免循环导入，直接读取配置文件）"""
+    config_file = os.path.join(os.path.expanduser("~"), ".wintoolbox", "settings.json")
+    default_dir = os.path.join(os.path.expanduser("~"), ".wintoolbox", "logs")
+
+    try:
+        if os.path.exists(config_file):
+            with open(config_file, encoding="utf-8") as f:
+                data = json.load(f)
+                logs_dir = data.get("logs_dir", "")
+                if logs_dir:
+                    return logs_dir
+    except Exception:
+        pass
+
+    return default_dir
+
+
 # 日志目录
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+LOG_DIR = _get_logs_dir()
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # 移除默认处理器
