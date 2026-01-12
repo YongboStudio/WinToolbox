@@ -72,6 +72,7 @@ class ShortcutTab(BaseTab):
                     ("🗑️ 软件卸载 (Geek)", "高效卸载软件及残留", self._open_geek_uninstaller),
                     ("🔬 进程监控 (ProcMon)", "实时监控进程活动", self._open_sysinternals),
                     ("🌐 网络连接 (TCPView)", "查看所有TCP/UDP连接", self._open_tcpview),
+                    ("📱 二维码识别", "识别图片中的二维码内容", self._open_qrcode_tool),
                 ]
             }
         ]
@@ -141,6 +142,38 @@ class ShortcutTab(BaseTab):
     def _open_tcpview(self) -> None:
         """打开 TCPView 网络连接监控"""
         self._open_sysinternals_tool("tcpview.exe", "TCPView")
+
+    def _open_qrcode_tool(self) -> None:
+        """打开二维码识别工具"""
+        # 获取主窗口的 notebook 组件
+        try:
+            # 从当前 frame 向上查找到根窗口
+            root = self.frame.winfo_toplevel()
+            
+            # 查找 notebook 组件
+            def find_notebook(widget):
+                if isinstance(widget, ttk.Notebook):
+                    return widget
+                for child in widget.winfo_children():
+                    result = find_notebook(child)
+                    if result:
+                        return result
+                return None
+            
+            notebook = find_notebook(root)
+            if notebook:
+                # 查找二维码识别选项卡
+                for i in range(notebook.index("end")):
+                    tab_text = notebook.tab(i, "text")
+                    if "二维码识别" in tab_text:
+                        notebook.select(i)
+                        # messagebox.showinfo("提示", "已切换到二维码识别工具")
+                        return
+            
+            messagebox.showinfo("提示", "请点击顶部的\"二维码识别\"选项卡使用此功能")
+            
+        except Exception as e:
+            messagebox.showinfo("提示", "请点击顶部的\"二维码识别\"选项卡使用此功能")
 
     def _open_sysinternals_tool(self, exe_name: str, tool_name: str) -> None:
         """打开 Sysinternals 工具"""

@@ -1,6 +1,6 @@
 [project]
 name = "WinToolbox"
-version = "1.0.0"
+version = "1.0.1"
 description = "Windows 系统工具箱 - 基于 Python + tkinter 的 GUI 工具"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,9 @@ classifiers = [
 # 项目依赖
 dependencies = [
     "loguru>=0.7.0",
+    "opencv-python>=4.8.0",  # 图像处理
+    "pyzbar>=0.1.9",         # 二维码识别
+    "pillow>=10.0.0",        # 图像处理
 ]
 
 [project.optional-dependencies]

@@ -3,7 +3,7 @@
 import os
 import tomllib
 from datetime import datetime
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_dynamic_libs
 
 block_cipher = None
 workdir = os.path.abspath('.')
@@ -24,10 +24,22 @@ hiddenimports += collect_submodules('services')
 hiddenimports += collect_submodules('ui')
 hiddenimports += collect_submodules('utils')
 
+# 添加 pyzbar 相关的隐藏导入
+hiddenimports += ['pyzbar', 'pyzbar.pyzbar', 'pyzbar.wrapper', 'pyzbar.locations']
+
+# 收集 pyzbar 数据文件和二进制文件
+pyzbar_datas = []
+pyzbar_binaries = []
+try:
+    pyzbar_datas = collect_data_files('pyzbar')
+    pyzbar_binaries = collect_dynamic_libs('pyzbar')
+except Exception as e:
+    print(f"Warning: Could not collect pyzbar files: {e}")
+
 a = Analysis(
     ['app.py'],
     pathex=[workdir],
-    binaries=[],
+    binaries=pyzbar_binaries,
     datas=[
         ('favicon.ico', '.'),
         ('buildtime.txt', '.'),
@@ -36,7 +48,7 @@ a = Analysis(
         ('services', 'services'),
         ('ui', 'ui'),
         ('utils', 'utils'),
-    ],
+    ] + pyzbar_datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

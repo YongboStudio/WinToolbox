@@ -7,7 +7,7 @@ from tkinter import font, ttk
 from services.settings import SettingsService
 from utils.admin import is_admin, run_as_admin
 
-from .tabs import AboutTab, HostsTab, IPTab, RouteTab, SettingsTab, ShortcutTab, SysinternalsTab
+from .tabs import AboutTab, HostsTab, IPTab, QRCodeTab, RouteTab, SettingsTab, ShortcutTab, SysinternalsTab
 
 
 class WinToolboxApp:
@@ -89,6 +89,7 @@ class WinToolboxApp:
             (HostsTab, "HOSTS 管理", True),
             (RouteTab, "路由管理", True),
             (IPTab, "IP 地址", True),
+            (QRCodeTab, "二维码识别", True),
             (SysinternalsTab, "Sysinternals", True),
             (SettingsTab, "设置", True),
             (AboutTab, "关于", True),
